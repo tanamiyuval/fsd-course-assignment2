@@ -1,0 +1,35 @@
+
+### Create Post
+POST http://localhost:3000/post
+Content-Type: application/json
+
+{
+"content": "This is the content of the first post",
+"createdBy": "1234567890"
+}
+
+### Create Another Post
+POST http://localhost:3000/post
+Content-Type: application/json
+
+{
+"content": "This is the content of the second post",
+"createdBy": "1234567892"
+}
+
+### Get All Posts
+GET http://localhost:3000/post
+
+### Get Post by ID
+GET http://localhost:3000/post/695ea576422b6471e9baab98
+
+### Get Posts by Sender
+GET http://localhost:3000/post?sender=1234567892
+
+### Update Post
+PUT http://localhost:3000/post/695ea5b1422b6471e9baab9a
+Content-Type: application/json
+
+{
+"content": "updating my second post"
+}
