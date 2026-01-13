@@ -2,8 +2,9 @@ import express, { Express } from "express";
 import mongoose from "mongoose";
 import swaggerUi from "swagger-ui-express";
 import postRoute from "./routes/postRoutes";
-import commentRouter from "./routes/commentRoutes";
 import swaggerSpec from "./swagger";
+import commentRouter from "./routes/commentRoutes";
+import userRouter from "./routes/userRoutes";
 import dotenv from "dotenv";
 
 dotenv.config({ path: ".env" });
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/post", postRoute);
 app.use("/comment", commentRouter);
+app.use("/user", userRouter);
 
 const initApp = () => {
   const pr = new Promise<Express>((resolve, reject) => {
