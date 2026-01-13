@@ -117,7 +117,6 @@ const refreshToken = async (req: Request, res: Response) => {
 		}
 
 		const tokens = generateTokens(decoded._id);
-		// Remove old token from user refreshTokens and add the new one
 		user.refreshTokens = user.refreshTokens.filter(
 			(token) => token !== refreshToken
 		);
