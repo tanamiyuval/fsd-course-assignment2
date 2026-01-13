@@ -110,7 +110,6 @@ const refreshToken = async (req: Request, res: Response) => {
 		}
 
 		if (!user.refreshTokens.includes(refreshToken)) {
-			// Clear all refresh tokens - possible token theft
 			user.refreshTokens = [];
 			await user.save();
 			console.log("**** Possible token theft for user:", user._id);
