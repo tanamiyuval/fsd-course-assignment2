@@ -1,23 +1,20 @@
 import request from "supertest";
 import initApp from "../index";
 import postsModel from "../models/postsModel";
-import mongoose, { ObjectId } from "mongoose";
+import userModel from "../models/userModel";
+import mongoose from "mongoose";
 import { Express } from "express";
+import { getLoggedInUser, UserData } from "./utils";
 
 let app: Express;
 let postId = "";
-
-type PostData = { content: string; createdBy: string; _id?: ObjectId };
-
-const postsList: PostData[] = [
-	{ content: "This is my first post", createdBy: "user1" },
-	{ content: "This is my second post", createdBy: "user2" },
-	{ content: "This is my third post", createdBy: "user1" },
-];
+let loginUser: UserData;
 
 beforeAll(async () => {
 	app = await initApp();
 	await postsModel.deleteMany();
+	await userModel.deleteMany();
+	loginUser = await getLoggedInUser(app);
 });
 
 afterAll(async () => {
@@ -31,34 +28,60 @@ describe("Posts API", () => {
 		expect(response.body).toEqual([]);
 	});
 
-	test("Create Post", async () => {
-		for (const post of postsList) {
-			const response = await request(app).post("/post").send(post);
-			expect(response.status).toBe(201);
-			expect(response.body.content).toBe(post.content);
-			expect(response.body.createdBy).toBe(post.createdBy);
-		}
+	test("Create Post without token fails", async () => {
+		const post = { content: "This is my first post", createdBy: loginUser._id };
+		const response = await request(app).post("/post").send(post);
+		expect(response.status).toBe(401);
+	});
+
+	test("Create Post with invalid token fails", async () => {
+		const post = { content: "This is my first post", createdBy: loginUser._id };
+		const response = await request(app)
+			.post("/post")
+			.set("Authorization", "Bearer invalid-token")
+			.send(post);
+		expect(response.status).toBe(401);
+	});
+
+	test("Create Post with token", async () => {
+		const post = { content: "This is my first post", createdBy: loginUser._id };
+		const response = await request(app)
+			.post("/post")
+			.set("Authorization", "Bearer " + loginUser.token)
+			.send(post);
+		expect(response.status).toBe(201);
+		expect(response.body.content).toBe(post.content);
+		expect(response.body.createdBy).toBe(post.createdBy);
+		postId = response.body._id;
+	});
+
+	test("Create second Post", async () => {
+		const post = { content: "This is my second post", createdBy: loginUser._id };
+		const response = await request(app)
+			.post("/post")
+			.set("Authorization", "Bearer " + loginUser.token)
+			.send(post);
+		expect(response.status).toBe(201);
+		expect(response.body.content).toBe(post.content);
 	});
 
 	test("Get All Posts", async () => {
 		const response = await request(app).get("/post");
 		expect(response.status).toBe(200);
-		expect(response.body.length).toBe(postsList.length);
+		expect(response.body.length).toBe(2);
 	});
 
 	test("Get Posts by sender", async () => {
-		const response = await request(app).get("/post?sender=" + postsList[0].createdBy);
+		const response = await request(app).get("/post?sender=" + loginUser._id);
 		expect(response.status).toBe(200);
 		expect(response.body.length).toBe(2);
-		expect(response.body[0].createdBy).toBe(postsList[0].createdBy);
-		postId = response.body[0]._id;
+		expect(response.body[0].createdBy).toBe(loginUser._id);
 	});
 
 	test("Get Post by ID", async () => {
 		const response = await request(app).get("/post/" + postId);
 		expect(response.status).toBe(200);
-		expect(response.body.content).toBe(postsList[0].content);
-		expect(response.body.createdBy).toBe(postsList[0].createdBy);
+		expect(response.body.content).toBe("This is my first post");
 		expect(response.body._id).toBe(postId);
 	});
 
@@ -71,6 +94,7 @@ describe("Posts API", () => {
 		const updatedContent = "Updated post content";
 		const response = await request(app)
 			.put("/post/" + postId)
+			.set("Authorization", "Bearer " + loginUser.token)
 			.send({ content: updatedContent });
 		expect(response.status).toBe(200);
 		expect(response.body.content).toBe(updatedContent);
@@ -85,12 +109,16 @@ describe("Posts API", () => {
 	test("Update Post with invalid ID - error", async () => {
 		const response = await request(app)
 			.put("/post/invalid-id")
+			.set("Authorization", "Bearer " + loginUser.token)
 			.send({ content: "Updated content" });
 		expect(response.status).toBe(500);
 	});
 
 	test("Create Post - validation error", async () => {
-		const response = await request(app).post("/post").send({});
+		const response = await request(app)
+			.post("/post")
+			.set("Authorization", "Bearer " + loginUser.token)
+			.send({});
 		expect(response.status).toBe(500);
 	});
 });
