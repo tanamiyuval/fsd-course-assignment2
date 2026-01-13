@@ -1,6 +1,5 @@
 import userModel from "../models/userModel";
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
 
 class UserController {
   model: typeof userModel;
