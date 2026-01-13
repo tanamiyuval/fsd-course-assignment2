@@ -16,13 +16,15 @@ beforeAll(async () => {
 	userId = loginUser._id;
 });
 
-afterAll(async () => {
-	await mongoose.connection.close();
+afterAll((done) => {
+	done();
 });
 
 describe("User API", () => {
 	test("Get all users", async () => {
-		const response = await request(app).get("/user");
+		const response = await request(app)
+			.get("/user")
+			.set("Authorization", "Bearer " + loginUser.token);
 		expect(response.status).toBe(200);
 		expect(response.body.length).toBeGreaterThan(0);
 		// Password should not be returned
@@ -30,7 +32,9 @@ describe("User API", () => {
 	});
 
 	test("Get user by ID", async () => {
-		const response = await request(app).get("/user/" + userId);
+		const response = await request(app)
+			.get("/user/" + userId)
+			.set("Authorization", "Bearer " + loginUser.token);
 		expect(response.status).toBe(200);
 		expect(response.body._id).toBe(userId);
 		expect(response.body.username).toBe(loginUser.username);
@@ -39,12 +43,16 @@ describe("User API", () => {
 	});
 
 	test("Get user by ID - not found", async () => {
-		const response = await request(app).get("/user/507f1f77bcf86cd799439099");
+		const response = await request(app)
+			.get("/user/507f1f77bcf86cd799439099")
+			.set("Authorization", "Bearer " + loginUser.token);
 		expect(response.status).toBe(404);
 	});
 
 	test("Get user by invalid ID - error", async () => {
-		const response = await request(app).get("/user/invalid-id");
+		const response = await request(app)
+			.get("/user/invalid-id")
+			.set("Authorization", "Bearer " + loginUser.token);
 		expect(response.status).toBe(500);
 	});
 
@@ -107,7 +115,9 @@ describe("User API", () => {
 		expect(response.status).toBe(200);
 
 		// Verify user is deleted
-		const getResponse = await request(app).get("/user/" + deleteUserId);
+		const getResponse = await request(app)
+			.get("/user/" + deleteUserId)
+			.set("Authorization", "Bearer " + loginUser.token);
 		expect(getResponse.status).toBe(404);
 	});
 });

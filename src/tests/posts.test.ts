@@ -17,8 +17,8 @@ beforeAll(async () => {
 	loginUser = await getLoggedInUser(app);
 });
 
-afterAll(async () => {
-	await mongoose.connection.close();
+afterAll((done) => {
+	done();
 });
 
 describe("Posts API", () => {

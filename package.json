@@ -6,8 +6,8 @@
   "scripts": {
     "start": "tsc && node ./dist/src/server.js",
     "dev": "nodemon  ./src/server.ts",
-    "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

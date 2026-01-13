@@ -29,8 +29,8 @@ beforeAll(async () => {
 	testPostId = testPost._id.toString();
 });
 
-afterAll(async () => {
-	await mongoose.connection.close();
+afterAll((done) => {
+	done();
 });
 
 describe("Comments API", () => {

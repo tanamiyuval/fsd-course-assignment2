@@ -16,8 +16,8 @@ beforeAll(async () => {
 	userData = createUserData();
 });
 
-afterAll(async () => {
-	await mongoose.connection.close();
+afterAll((done) => {
+	done();
 });
 
 describe("Auth API", () => {
