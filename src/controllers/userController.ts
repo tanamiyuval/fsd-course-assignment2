@@ -8,7 +8,19 @@ class UserController {
     this.model = userModel;
   }
 
-  async getAll(res: Response) {
+  async create(req: Request, res: Response) {
+    const userData = req.body;
+
+    try {
+      const data = await this.model.create(userData);
+      res.status(201).json(data);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Error creating user");
+    }
+  }
+
+  async getAll(req: Request, res: Response) {
     try {
       const data = await this.model.find().select("-password");
       res.json(data);
