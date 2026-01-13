@@ -2,43 +2,35 @@ import request from "supertest";
 import initApp from "../index";
 import commentModel from "../models/commentModel";
 import postsModel from "../models/postsModel";
-import mongoose, { ObjectId } from "mongoose";
+import userModel from "../models/userModel";
+import mongoose from "mongoose";
 import { Express } from "express";
+import { getLoggedInUser, UserData } from "./utils";
 
 let app: Express;
 let commentId = "";
 let testPostId = "";
-
-type CommentData = {
-	postId: string; content: string; sender: string; _id?: ObjectId
-};
-
-const commentsList: CommentData[] = [
-	{ postId: "", content: "This is my first comment", sender: "user1" },
-	{ postId: "", content: "This is my second comment", sender: "user2" },
-	{ postId: "", content: "This is my third comment", sender: "user1" },
-];
+let loginUser: UserData;
 
 beforeAll(async () => {
 	app = await initApp();
 	await commentModel.deleteMany();
 	await postsModel.deleteMany();
+	await userModel.deleteMany();
+
+	// First get a logged in user
+	loginUser = await getLoggedInUser(app);
 
 	// Create a test post to attach comments to
 	const testPost = await postsModel.create({
 		content: "Test post for comments",
-		createdBy: "testuser",
+		createdBy: loginUser._id,
 	});
 	testPostId = testPost._id.toString();
-
-	// Update comments list with the real post ID
-	commentsList.forEach((comment) => {
-		comment.postId = testPostId;
-	});
 });
 
-afterAll(async () => {
-	await mongoose.connection.close();
+afterAll((done) => {
+	done();
 });
 
 describe("Comments API", () => {
@@ -49,27 +41,38 @@ describe("Comments API", () => {
 	});
 
 	test("Create Comment", async () => {
-		for (const comment of commentsList) {
-			const response = await request(app).post("/comment").send(comment);
-			expect(response.status).toBe(201);
-			expect(response.body.content).toBe(comment.content);
-			expect(response.body.sender).toBe(comment.sender);
-			expect(response.body.postId).toBe(comment.postId);
-		}
+		const comment = { postId: testPostId, content: "This is my first comment", sender: loginUser._id };
+		const response = await request(app)
+			.post("/comment")
+			.set("Authorization", "Bearer " + loginUser.token)
+			.send(comment);
+		expect(response.status).toBe(201);
+		expect(response.body.content).toBe(comment.content);
+		expect(response.body.sender).toBe(comment.sender);
+		expect(response.body.postId).toBe(comment.postId);
+	});
+
+	test("Create second Comment", async () => {
+		const comment = { postId: testPostId, content: "This is my second comment", sender: loginUser._id };
+		const response = await request(app)
+			.post("/comment")
+			.set("Authorization", "Bearer " + loginUser.token)
+			.send(comment);
+		expect(response.status).toBe(201);
+		expect(response.body.content).toBe(comment.content);
 	});
 
 	test("Get Comments by postId", async () => {
 		const response = await request(app).get("/comment/post/" + testPostId);
 		expect(response.status).toBe(200);
-		expect(response.body.length).toBe(commentsList.length);
+		expect(response.body.length).toBe(2);
 		commentId = response.body[0]._id;
 	});
 
 	test("Get Comment by ID", async () => {
 		const response = await request(app).get("/comment/" + commentId);
 		expect(response.status).toBe(200);
-		expect(response.body.content).toBe(commentsList[0].content);
-		expect(response.body.sender).toBe(commentsList[0].sender);
+		expect(response.body.content).toBe("This is my first comment");
 		expect(response.body._id).toBe(commentId);
 	});
 
@@ -82,6 +85,7 @@ describe("Comments API", () => {
 		const updatedContent = "Updated comment content";
 		const response = await request(app)
 			.put("/comment/" + commentId)
+			.set("Authorization", "Bearer " + loginUser.token)
 			.send({ content: updatedContent });
 		expect(response.status).toBe(200);
 		expect(response.body.content).toBe(updatedContent);
@@ -91,12 +95,15 @@ describe("Comments API", () => {
 	test("Update Comment - not found", async () => {
 		const response = await request(app)
 			.put("/comment/507f1f77bcf86cd799439099")
+			.set("Authorization", "Bearer " + loginUser.token)
 			.send({ content: "Updated content" });
 		expect(response.status).toBe(404);
 	});
 
 	test("Delete Comment", async () => {
-		const response = await request(app).delete("/comment/" + commentId);
+		const response = await request(app)
+			.delete("/comment/" + commentId)
+			.set("Authorization", "Bearer " + loginUser.token);
 		expect(response.status).toBe(200);
 
 		const getResponse = await request(app).get("/comment/" + commentId);
@@ -104,7 +111,9 @@ describe("Comments API", () => {
 	});
 
 	test("Delete Comment - not found", async () => {
-		const response = await request(app).delete("/comment/507f1f77bcf86cd799439099");
+		const response = await request(app)
+			.delete("/comment/507f1f77bcf86cd799439099")
+			.set("Authorization", "Bearer " + loginUser.token);
 		expect(response.status).toBe(404);
 	});
 
@@ -121,17 +130,23 @@ describe("Comments API", () => {
 	test("Update Comment with invalid ID - error", async () => {
 		const response = await request(app)
 			.put("/comment/invalid-id")
+			.set("Authorization", "Bearer " + loginUser.token)
 			.send({ content: "Updated content" });
 		expect(response.status).toBe(400);
 	});
 
 	test("Delete Comment with invalid ID - error", async () => {
-		const response = await request(app).delete("/comment/invalid-id");
+		const response = await request(app)
+			.delete("/comment/invalid-id")
+			.set("Authorization", "Bearer " + loginUser.token);
 		expect(response.status).toBe(400);
 	});
 
 	test("Create Comment - validation error", async () => {
-		const response = await request(app).post("/comment").send({});
+		const response = await request(app)
+			.post("/comment")
+			.set("Authorization", "Bearer " + loginUser.token)
+			.send({});
 		expect(response.status).toBe(400);
 	});
 });

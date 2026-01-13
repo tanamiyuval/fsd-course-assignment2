@@ -5,6 +5,7 @@ import postRoute from "./routes/postRoutes";
 import swaggerSpec from "./swagger";
 import commentRouter from "./routes/commentRoutes";
 import userRouter from "./routes/userRoutes";
+import authRouter from "./routes/authRoutes";
 import dotenv from "dotenv";
 
 dotenv.config({ path: ".env" });
@@ -16,6 +17,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/post", postRoute);
 app.use("/comment", commentRouter);
 app.use("/user", userRouter);
+app.use("/auth", authRouter);
 
 const initApp = () => {
   const pr = new Promise<Express>((resolve, reject) => {

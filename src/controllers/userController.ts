@@ -8,7 +8,7 @@ class UserController {
     this.model = userModel;
   }
 
-  async getAll(res: Response) {
+  async getAll(req: Request, res: Response) {
     try {
       const data = await this.model.find().select("-password");
       res.json(data);

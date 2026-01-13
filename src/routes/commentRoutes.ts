@@ -1,5 +1,6 @@
 import express from "express";
 import commentController from "../controllers/commentController";
+import { authenticate } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
@@ -22,10 +23,12 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Comment'
+ *       401:
+ *         description: Unauthorized
  *       400:
  *         description: Bad request
  */
-router.post("/", commentController.createComment);
+router.post("/", authenticate, commentController.createComment);
 
 /**
  * @swagger
@@ -109,10 +112,12 @@ router.get("/:id", commentController.getCommentById);
  *               $ref: '#/components/schemas/Comment'
  *       404:
  *         description: Comment not found
+ *       401:
+ *         description: Unauthorized
  *       400:
  *         description: Bad request
  */
-router.put("/:id", commentController.updateComment);
+router.put("/:id", authenticate, commentController.updateComment);
 
 /**
  * @swagger
@@ -132,9 +137,11 @@ router.put("/:id", commentController.updateComment);
  *         description: Comment deleted successfully
  *       404:
  *         description: Comment not found
+ *       401:
+ *         description: Unauthorized
  *       400:
  *         description: Bad request
  */
-router.delete("/:id", commentController.deleteComment);
+router.delete("/:id", authenticate, commentController.deleteComment);
 
 export default router;

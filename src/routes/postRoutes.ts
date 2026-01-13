@@ -1,5 +1,6 @@
 import express from "express";
 import postController from "../controllers/postsController";
+import { authenticate } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
@@ -9,6 +10,8 @@ const router = express.Router();
  *   post:
  *     summary: Create a new post
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -22,10 +25,12 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Post'
+ *       401:
+ *         description: Unauthorized
  *       500:
  *         description: Server error
  */
-router.post("/", postController.create.bind(postController));
+router.post("/", authenticate, postController.create.bind(postController));
 
 /**
  * @swagger
@@ -106,9 +111,11 @@ router.get("/:id", postController.getById.bind(postController));
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Post'
+ *       401:
+ *         description: Unauthorized
  *       500:
  *         description: Server error
  */
-router.put("/:id", postController.update.bind(postController));
+router.put("/:id", authenticate, postController.update.bind(postController));
 
 export default router;
