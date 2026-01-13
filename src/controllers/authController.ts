@@ -109,7 +109,6 @@ const refreshToken = async (req: Request, res: Response) => {
 			return sendError(401, "Invalid refresh token", res);
 		}
 
-		// Check if the refresh token exists in the user's refreshTokens array
 		if (!user.refreshTokens.includes(refreshToken)) {
 			// Clear all refresh tokens - possible token theft
 			user.refreshTokens = [];
