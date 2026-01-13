@@ -34,7 +34,6 @@ const register = async (req: Request, res: Response) => {
 		return sendError(400, "Email, password and username are required", res);
 	}
 	try {
-		// Check if user already exists
 		const existingUser = await userModel.findOne({
 			$or: [{ email }, { username }],
 		});
